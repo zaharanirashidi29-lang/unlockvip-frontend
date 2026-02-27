@@ -3,40 +3,253 @@
 <head>
   <title>Unlock VIP</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: url('silver.jpg') center/cover no-repeat;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: -1;
+    }
+
+    /* Cinematic intro */
+    .intro {
+      position: fixed;
+      inset: 0;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      z-index: 9999;
+      animation: fadeOut 2s ease forwards;
+      animation-delay: 2s;
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
+    }
+
+    /* Video */
+    .video-card {
+      position: relative;
+      margin: 20px;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+      animation: slideUp 1s ease forwards;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .video-card video {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      filter: brightness(0.75);
+    }
+
+    .play-btn {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: 65px;
+      height: 65px;
+      background: linear-gradient(135deg, #ff2d55, #ff6b81);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .play-btn::before {
+      content: "";
+      border-style: solid;
+      border-width: 12px 0 12px 18px;
+      border-color: transparent transparent transparent white;
+      margin-left: 5px;
+    }
+
+    /* VIP Section */
+    .vip {
+      backdrop-filter: blur(15px);
+      background: rgba(255,255,255,0.08);
+      padding: 30px 20px;
+      border-top-left-radius: 30px;
+      border-top-right-radius: 30px;
+      text-align: center;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    }
+
+    .price-old {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .price-new {
+      font-size: 20px;
+      color: gold;
+      font-weight: bold;
+    }
+
+    .members {
+      font-size: 14px;
+      margin: 10px 0;
+      color: #ffd700;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      font-weight: bold;
+      font-size: 16px;
+      background: linear-gradient(135deg, gold, orange);
+      cursor: pointer;
+    }
+
+    .loading {
+      margin-top: 10px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .trust {
+      margin-top: 15px;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    /* Fake chat bubble */
+    .chat-bubble {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #25d366;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 30px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .chat-popup {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 250px;
+      background: white;
+      color: black;
+      padding: 15px;
+      border-radius: 15px;
+      display: none;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+  </style>
 </head>
 
-<body style="font-family: Arial; text-align: center; padding: 40px;">
+<body>
 
-<h2>🔒 Unlock VIP Premium</h2>
-<p>One-time payment: 1500 TZS</p>
+<div class="intro">Verifying eligibility...</div>
 
-<input 
-  type="text" 
-  id="phone" 
-  placeholder="Enter phone number (07XXXXXXXX)"
-  style="padding:10px; width:250px;"
-/>
+<div class="video-card">
+  <video id="previewVideo" autoplay muted loop playsinline>
+    <source src="preview.mp4" type="video/mp4">
+  </video>
+  <div class="play-btn" onclick="toggleSound()"></div>
+</div>
 
-<br><br>
+<div class="vip">
+  <h2>🔒 Unlock VIP Premium</h2>
 
-<button 
-  onclick="pay()" 
-  style="padding:12px 20px; background:gold; border:none; font-weight:bold;"
->
-  Pay Now
-</button>
+  <p class="price-old">3000 TZS</p>
+  <p class="price-new">1500 TZS (Today Only)</p>
+
+  <div class="members" id="membersCounter">
+    0 VIP members joined today
+  </div>
+
+  <p style="font-size:13px; opacity:0.8;">
+    Exclusive offer available in Tanzania today 🇹🇿
+  </p>
+
+  <input type="text" id="phone" placeholder="Enter phone number (07XXXXXXXX)" />
+
+  <button id="payBtn" onclick="pay()">Pay Now</button>
+  <div class="loading" id="loadingText">Processing payment...</div>
+
+  <div class="trust">
+    Supported by: CRDB • Airtel Money • Halotel • Mix by Yas
+  </div>
+</div>
+
+<div class="chat-bubble" onclick="toggleChat()">Need help?</div>
+<div class="chat-popup" id="chatPopup">
+  Hi 👋 How can we help you unlock VIP today?
+</div>
 
 <script>
+
+function toggleSound() {
+  const video = document.getElementById("previewVideo");
+  video.muted = !video.muted;
+}
+
+function toggleChat() {
+  const popup = document.getElementById("chatPopup");
+  popup.style.display = popup.style.display === "block" ? "none" : "block";
+}
+
+/* Animated members counter */
+let count = 0;
+const counter = document.getElementById("membersCounter");
+const interval = setInterval(() => {
+  count++;
+  counter.innerText = count + " VIP members joined today";
+  if (count >= 127) clearInterval(interval);
+}, 30);
+
 async function pay() {
 
   const phoneInput = document.getElementById("phone").value;
+  const button = document.getElementById("payBtn");
+  const loading = document.getElementById("loadingText");
 
   if (!phoneInput) {
     alert("Please enter phone number");
     return;
   }
 
-  // Convert 07XXXXXXXX → 255XXXXXXXXX
   let phone = phoneInput.trim();
 
   if (phone.startsWith("0")) {
@@ -47,32 +260,30 @@ async function pay() {
     phone = phone.replace("+", "");
   }
 
-  try {
+  button.disabled = true;
+  loading.style.display = "block";
 
+  try {
     const response = await fetch("https://unlockvip-backend.onrender.com/create-payment", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        amount: 1500,
-        phone: phone
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: 1500, phone: phone })
     });
 
     const data = await response.json();
-    console.log(data);
 
     if (data.success) {
       alert("USSD Push Sent! Check your phone 📱");
     } else {
-      alert("Error: " + JSON.stringify(data.error));
+      alert("Error occurred");
     }
 
   } catch (error) {
     alert("Payment failed ❌");
-    console.error(error);
   }
+
+  button.disabled = false;
+  loading.style.display = "none";
 }
 </script>
 

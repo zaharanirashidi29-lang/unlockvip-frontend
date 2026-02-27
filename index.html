@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Unlock VIP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="font-family: Arial; text-align: center; padding: 40px;">
+
+<h2>🔒 Unlock VIP Premium</h2>
+<p>One-time payment: 1500 TZS</p>
+
+<input 
+  type="text" 
+  id="phone" 
+  placeholder="Enter phone number (07XXXXXXXX)"
+  style="padding:10px; width:250px;"
+/>
+
+<br><br>
+
+<button 
+  onclick="pay()" 
+  style="padding:12px 20px; background:gold; border:none; font-weight:bold;"
+>
+  Pay Now
+</button>
+
+<script>
+async function pay() {
+
+  const phoneInput = document.getElementById("phone").value;
+
+  if (!phoneInput) {
+    alert("Please enter phone number");
+    return;
+  }
+
+  // Convert 07XXXXXXXX → 255XXXXXXXXX
+  let phone = phoneInput.trim();
+
+  if (phone.startsWith("0")) {
+    phone = "255" + phone.substring(1);
+  }
+
+  if (phone.startsWith("+255")) {
+    phone = phone.replace("+", "");
+  }
+
+  try {
+
+    const response = await fetch("https://unlockvip-backend.onrender.com/create-payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        amount: 1500,
+        phone: phone
+      })
+    });
+
+    const data = await response.json();
+    console.log(data);
+
+    if (data.success) {
+      alert("USSD Push Sent! Check your phone 📱");
+    } else {
+      alert("Error: " + JSON.stringify(data.error));
+    }
+
+  } catch (error) {
+    alert("Payment failed ❌");
+    console.error(error);
+  }
+}
+</script>
+
+</body>
+</html>

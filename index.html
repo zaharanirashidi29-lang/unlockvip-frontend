@@ -29,7 +29,7 @@
 </div>
 
 <div id="success">
-✅ Payment request sent to your phone.  
+✅ Payment request sent to your phone.
 Please confirm the payment.
 </div>
 
@@ -90,6 +90,7 @@ Please confirm the payment.
 
 </div>
 
+
 <section class="features">
 
 <h2>📊 Live Network Activity</h2>
@@ -110,6 +111,7 @@ Please confirm the payment.
 
 </div>
 
+
 <script>
 
 /* PAYMENT */
@@ -128,7 +130,7 @@ document.getElementById("success").style.display="none"
 
 try{
 
-const response=await fetch("http://localhost:10000/create-payment",{
+const response=await fetch("https://unlockvip-backend.onrender.com/create-payment",{
 
 method:"POST",
 headers:{

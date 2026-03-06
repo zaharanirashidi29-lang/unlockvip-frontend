@@ -167,3 +167,21 @@ display:none;
 color:lightgreen;
 margin-top:20px;
 }
+
+/* 📱 MOBILE FIX */
+
+@media (max-width:768px){
+
+.card-container{
+flex-direction:column;
+align-items:center;
+gap:30px;
+overflow-x:hidden;
+}
+
+.card{
+width:90%;
+max-width:350px;
+}
+
+}

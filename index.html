@@ -2,14 +2,10 @@
 <html lang="en">
 
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Internet Bundles</title>
-
 <link rel="stylesheet" href="style.css">
-
 </head>
 
 <body>
@@ -40,11 +36,10 @@ Please confirm the payment.
 
 <div class="card-container">
 
+<!-- HALOTEL -->
 <div class="card" data-network="halotel">
-
 <h3>HALOTEL</h3>
-<img src="images/halotel.jpeg" class="logo">
-
+<img src="./images/halotel.jpeg" class="logo">
 <div class="circle">
 <div class="bundle">
 <h2>23GB</h2>
@@ -52,17 +47,13 @@ Please confirm the payment.
 <span>VALID FOR 3 MONTHS</span>
 </div>
 </div>
-
 <button onclick="buy()">Buy Now</button>
-
 </div>
 
-
+<!-- YAS -->
 <div class="card" data-network="yas">
-
 <h3>YAS</h3>
-<img src="images/yas.jpeg" class="logo">
-
+<img src="./images/yas.jpeg" class="logo">
 <div class="circle">
 <div class="bundle">
 <h2>23GB</h2>
@@ -70,17 +61,13 @@ Please confirm the payment.
 <span>VALID FOR 3 MONTHS</span>
 </div>
 </div>
-
 <button onclick="buy()">Buy Now</button>
-
 </div>
 
-
+<!-- AIRTEL -->
 <div class="card" data-network="airtel">
-
 <h3>AIRTEL</h3>
-<img src="images/airtel.jpeg" class="logo">
-
+<img src="./images/airtel.jpeg" class="logo">
 <div class="circle">
 <div class="bundle">
 <h2>23GB</h2>
@@ -88,34 +75,38 @@ Please confirm the payment.
 <span>VALID FOR 3 MONTHS</span>
 </div>
 </div>
-
 <button onclick="buy()">Buy Now</button>
+</div>
 
+<!-- ✅ VODACOM -->
+<div class="card" data-network="vodacom">
+<h3>VODACOM</h3>
+<img src="./images/vodacom.jpeg" class="logo"> <!-- FIXED -->
+<div class="circle">
+<div class="bundle">
+<h2>23GB</h2>
+<p>3000 TSH</p>
+<span>VALID FOR 3 MONTHS</span>
+</div>
+</div>
+<button onclick="buy()">Buy Now</button>
 </div>
 
 </div>
-
 
 <section class="features">
-
 <h2>📊 Live Network Activity</h2>
 
 <div class="features-grid">
-
 <div id="usersOnline" class="feature-box">Users Online: 0</div>
-
 <div id="networkSpeed" class="feature-box">Network Speed: -- Mbps</div>
-
 <div id="bundlesSold" class="feature-box">Bundles Today: 1200</div>
-
 <div id="networkLoad" class="feature-box">Network Load: 70%</div>
-
 </div>
 
 </section>
 
 </div>
-
 
 <script>
 
@@ -173,8 +164,7 @@ alert("Server error")
 
 }
 
-
-/* NETWORK AUTO DETECT */
+/* NETWORK DETECTION */
 
 const phoneInput=document.getElementById("phone")
 const cards=document.querySelectorAll(".card")
@@ -190,34 +180,24 @@ card.classList.remove("active-network")
 if(number.startsWith("062")){
 activate("halotel")
 }
-
-else if(
-number.startsWith("074") ||
-number.startsWith("075") ||
-number.startsWith("076")
-){
+else if(number.startsWith("065") || number.startsWith("067")){
 activate("yas")
 }
-
-else if(
-number.startsWith("068") ||
-number.startsWith("069")
-){
+else if(number.startsWith("068") || number.startsWith("069")){
 activate("airtel")
+}
+else if(number.startsWith("071") || number.startsWith("075") || number.startsWith("076")){
+activate("vodacom")
 }
 
 })
 
 function activate(network){
-
 cards.forEach(card=>{
-
 if(card.dataset.network===network){
 card.classList.add("active-network")
 }
-
 })
-
 }
 
 </script>

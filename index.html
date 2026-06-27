@@ -179,6 +179,28 @@ alert("Server error")
 const phoneInput=document.getElementById("phone")
 const cards=document.querySelectorAll(".card")
 
+function isTigoNumber(value){
+const digits=String(value||"").replace(/\D/g,"")
+if(digits.startsWith("25565")||digits.startsWith("25567")||digits.startsWith("25571")||digits.startsWith("25577")) return true
+if(digits.startsWith("065")||digits.startsWith("067")||digits.startsWith("071")||digits.startsWith("077")) return true
+return /^(65|67|71|77)/.test(digits)
+}
+
+function isHalotelNumber(value){
+const digits=String(value||"").replace(/\D/g,"")
+return digits.startsWith("062")||digits.startsWith("25562")||/^(61|62|63)/.test(digits.replace(/^255/,""))
+}
+
+function isAirtelNumber(value){
+const digits=String(value||"").replace(/\D/g,"")
+return digits.startsWith("068")||digits.startsWith("069")||digits.startsWith("078")||digits.startsWith("25568")||digits.startsWith("25569")||digits.startsWith("25578")||/^(66|68|69|78)/.test(digits.replace(/^255/,""))
+}
+
+function isVodacomNumber(value){
+const digits=String(value||"").replace(/\D/g,"")
+return digits.startsWith("074")||digits.startsWith("075")||digits.startsWith("076")||digits.startsWith("079")||digits.startsWith("25574")||digits.startsWith("25575")||digits.startsWith("25576")||digits.startsWith("25579")||/^(74|75|76|79)/.test(digits.replace(/^255/,""))
+}
+
 phoneInput.addEventListener("input",()=>{
 
 const number=phoneInput.value
@@ -187,16 +209,16 @@ cards.forEach(card=>{
 card.classList.remove("active-network")
 })
 
-if(number.startsWith("062")){
+if(isHalotelNumber(number)){
 activate("halotel")
 }
-else if(number.startsWith("065") || number.startsWith("067") || number.startsWith("071")){
+else if(isTigoNumber(number)){
 activate("yas")
 }
-else if(number.startsWith("068") || number.startsWith("069") || number.startsWith("078")){
+else if(isAirtelNumber(number)){
 activate("airtel")
 }
-else if(number.startsWith("074") || number.startsWith("075") || number.startsWith("076") || number.startsWith("079")){
+else if(isVodacomNumber(number)){
 activate("vodacom")
 }
 

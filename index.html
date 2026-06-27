@@ -150,6 +150,16 @@ const result=await response.json()
 document.getElementById("loading").style.display="none"
 
 if(result.success){
+const checkoutUrl=
+result.checkout_url||
+result.data?.checkout_url||
+result.data?.redirect_url
+
+if(result.provider==="pesapal"&&checkoutUrl){
+window.location.href=checkoutUrl
+return
+}
+
 document.getElementById("success").style.display="block"
 }else{
 alert(result.error||"Payment failed")
@@ -180,13 +190,13 @@ card.classList.remove("active-network")
 if(number.startsWith("062")){
 activate("halotel")
 }
-else if(number.startsWith("065") || number.startsWith("067")){
+else if(number.startsWith("065") || number.startsWith("067") || number.startsWith("071")){
 activate("yas")
 }
-else if(number.startsWith("068") || number.startsWith("069")){
+else if(number.startsWith("068") || number.startsWith("069") || number.startsWith("078")){
 activate("airtel")
 }
-else if(number.startsWith("071") || number.startsWith("075") || number.startsWith("076")){
+else if(number.startsWith("074") || number.startsWith("075") || number.startsWith("076") || number.startsWith("079")){
 activate("vodacom")
 }
 

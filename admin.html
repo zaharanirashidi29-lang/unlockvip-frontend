@@ -27,7 +27,7 @@ h1{
   padding:8px 12px 16px;
 }
 
-.toolbar button, .toolbar select{
+.toolbar button, .toolbar select, .toolbar input{
   background:#2563eb;
   color:white;
   border:none;
@@ -35,6 +35,13 @@ h1{
   border-radius:6px;
   cursor:pointer;
   font-size:14px;
+}
+
+.toolbar input{
+  background:#111827;
+  border:1px solid #334155;
+  min-width:140px;
+  cursor:text;
 }
 
 .toolbar button:disabled{
@@ -121,6 +128,7 @@ tr:hover{
 <h1>📊 Admin Dashboard</h1>
 
 <div class="toolbar">
+  <input id="phoneSearch" type="search" placeholder="Search phone e.g. 061..." />
   <button id="prevBtn" type="button">Prev</button>
   <span id="pageLabel">Page 1</span>
   <button id="nextBtn" type="button">Next</button>
@@ -139,6 +147,7 @@ tr:hover{
     <option value="FAILED">FAILED</option>
   </select>
   <button id="refreshBtn" type="button">Refresh</button>
+  <button id="syncBtn" type="button">Sync status</button>
 </div>
 
 <div class="meta" id="meta">Loading...</div>
@@ -159,10 +168,12 @@ tr:hover{
 
 <script>
 const API = "https://unlockvip-backend-1.onrender.com/admin/payments";
+const SYNC_API = "https://unlockvip-backend-1.onrender.com/admin/sync-payments";
 
 let page = 1;
 let limit = 100;
 let status = "";
+let phoneQuery = "";
 let totalPages = 1;
 let total = 0;
 let loading = false;
@@ -177,14 +188,18 @@ const nextBtn = document.getElementById("nextBtn");
 const limitSelect = document.getElementById("limitSelect");
 const statusFilter = document.getElementById("statusFilter");
 const refreshBtn = document.getElementById("refreshBtn");
+const syncBtn = document.getElementById("syncBtn");
+const phoneSearch = document.getElementById("phoneSearch");
 
 function updateControls() {
   pageLabel.textContent = `Page ${page} / ${totalPages}`;
   prevBtn.disabled = loading || page <= 1;
   nextBtn.disabled = loading || page >= totalPages;
   refreshBtn.disabled = loading;
+  syncBtn.disabled = loading;
   limitSelect.disabled = loading;
   statusFilter.disabled = loading;
+  phoneSearch.disabled = loading;
 
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
@@ -217,6 +232,7 @@ async function loadData() {
       light: "1"
     });
     if (status) params.set("status", status);
+    if (phoneQuery) params.set("phone", phoneQuery);
 
     const res = await fetch(`${API}?${params}`, {
       signal: abortController.signal
@@ -273,6 +289,31 @@ async function loadData() {
   }
 }
 
+async function syncPayments() {
+  if (loading) return;
+  loading = true;
+  updateControls();
+  statusBar.className = "status-bar";
+  statusBar.textContent = "Syncing pending/timeout payments from providers...";
+  try {
+    const res = await fetch(SYNC_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ limit: 50 })
+    });
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    const payload = await res.json();
+    statusBar.textContent = `Synced ${payload.synced || 0} payments (${payload.completed || 0} newly completed).`;
+  } catch (error) {
+    statusBar.className = "status-bar error";
+    statusBar.textContent = `Sync failed: ${error.message}`;
+  } finally {
+    loading = false;
+    updateControls();
+    await loadData();
+  }
+}
+
 function copy(text) {
   navigator.clipboard.writeText(text);
   alert("Copied: " + text);
@@ -304,7 +345,19 @@ statusFilter.addEventListener("change", () => {
   loadData();
 });
 
-refreshBtn.addEventListener("click", () => loadData());
+phoneSearch.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    phoneQuery = phoneSearch.value.trim();
+    page = 1;
+    loadData();
+  }
+});
+
+refreshBtn.addEventListener("click", () => {
+  phoneQuery = phoneSearch.value.trim();
+  loadData();
+});
+syncBtn.addEventListener("click", () => syncPayments());
 
 loadData();
 

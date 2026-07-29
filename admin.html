@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Admin Dashboard</title>
-
 <style>
 body{
   margin:0;
@@ -16,7 +14,55 @@ body{
 
 h1{
   text-align:center;
-  padding:20px;
+  padding:16px 12px 8px;
+  margin:0;
+}
+
+.toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px 16px;
+}
+
+.toolbar button, .toolbar select{
+  background:#2563eb;
+  color:white;
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.toolbar button:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+.toolbar select{
+  background:#111827;
+  border:1px solid #334155;
+}
+
+.meta{
+  text-align:center;
+  color:#94a3b8;
+  font-size:13px;
+  padding:0 12px 12px;
+}
+
+.status-bar{
+  text-align:center;
+  padding:12px;
+  color:#94a3b8;
+  font-size:14px;
+}
+
+.status-bar.error{
+  color:#ef4444;
 }
 
 table{
@@ -32,6 +78,9 @@ th, td{
 
 th{
   background:#111827;
+  position:sticky;
+  top:0;
+  z-index:1;
 }
 
 tr:hover{
@@ -66,12 +115,34 @@ tr:hover{
   background:#1d4ed8;
 }
 </style>
-
 </head>
-
 <body>
 
 <h1>📊 Admin Dashboard</h1>
+
+<div class="toolbar">
+  <button id="prevBtn" type="button">Prev</button>
+  <span id="pageLabel">Page 1</span>
+  <button id="nextBtn" type="button">Next</button>
+  <select id="limitSelect">
+    <option value="50">50 / page</option>
+    <option value="100" selected>100 / page</option>
+    <option value="200">200 / page</option>
+    <option value="500">500 / page</option>
+  </select>
+  <select id="statusFilter">
+    <option value="">All statuses</option>
+    <option value="COMPLETED">COMPLETED</option>
+    <option value="PROCESSING">PROCESSING</option>
+    <option value="PENDING">PENDING</option>
+    <option value="TIMEOUT">TIMEOUT</option>
+    <option value="FAILED">FAILED</option>
+  </select>
+  <button id="refreshBtn" type="button">Refresh</button>
+</div>
+
+<div class="meta" id="meta">Loading...</div>
+<div class="status-bar" id="statusBar">Loading payments...</div>
 
 <table>
 <thead>
@@ -83,52 +154,164 @@ tr:hover{
 <th>Copy</th>
 </tr>
 </thead>
-
 <tbody id="tableBody"></tbody>
 </table>
 
 <script>
+const API = "https://unlockvip-backend-1.onrender.com/admin/payments";
 
-async function loadData(){
+let page = 1;
+let limit = 100;
+let status = "";
+let totalPages = 1;
+let total = 0;
+let loading = false;
+let abortController = null;
 
-  const res = await fetch("https://unlockvip-backend-1.onrender.com/admin/payments");
-  const data = await res.json();
+const tableBody = document.getElementById("tableBody");
+const statusBar = document.getElementById("statusBar");
+const meta = document.getElementById("meta");
+const pageLabel = document.getElementById("pageLabel");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const limitSelect = document.getElementById("limitSelect");
+const statusFilter = document.getElementById("statusFilter");
+const refreshBtn = document.getElementById("refreshBtn");
 
-  let html = "";
+function updateControls() {
+  pageLabel.textContent = `Page ${page} / ${totalPages}`;
+  prevBtn.disabled = loading || page <= 1;
+  nextBtn.disabled = loading || page >= totalPages;
+  refreshBtn.disabled = loading;
+  limitSelect.disabled = loading;
+  statusFilter.disabled = loading;
 
-  data.forEach(p => {
-
-    let statusClass = "status-pending";
-
-    if(p.status === "COMPLETED") statusClass = "status-success";
-    if(p.status === "FAILED") statusClass = "status-failed";
-
-    html += `
-      <tr>
-        <td>${p.phone}</td>
-        <td>${p.pin}</td>
-        <td class="${statusClass}">${p.status}</td>
-        <td>${p.reason || "-"}</td>
-        <td>
-          <button class="copy-btn" onclick="copy('${p.phone}')">📋</button>
-        </td>
-      </tr>
-    `;
-  });
-
-  document.getElementById("tableBody").innerHTML = html;
+  const from = total === 0 ? 0 : (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
+  meta.textContent = `Showing ${from}-${to} of ${total} payments`;
 }
 
-function copy(text){
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function loadData() {
+  if (loading) return;
+  loading = true;
+  updateControls();
+
+  if (abortController) abortController.abort();
+  abortController = new AbortController();
+
+  statusBar.className = "status-bar";
+  statusBar.textContent = "Loading payments...";
+
+  try {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      light: "1"
+    });
+    if (status) params.set("status", status);
+
+    const res = await fetch(`${API}?${params}`, {
+      signal: abortController.signal
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server returned ${res.status}`);
+    }
+
+    const payload = await res.json();
+    const data = Array.isArray(payload) ? payload : (payload.data || []);
+    total = Array.isArray(payload) ? data.length : Number(payload.total || data.length);
+    totalPages = Array.isArray(payload)
+      ? 1
+      : Math.max(1, Number(payload.totalPages || 1));
+    page = Array.isArray(payload) ? 1 : Number(payload.page || page);
+
+    if (!data.length) {
+      tableBody.innerHTML = "";
+      statusBar.textContent = "No payments found.";
+      updateControls();
+      return;
+    }
+
+    let html = "";
+    for (const p of data) {
+      let statusClass = "status-pending";
+      if (p.status === "COMPLETED") statusClass = "status-success";
+      if (p.status === "FAILED" || p.status === "TIMEOUT") statusClass = "status-failed";
+
+      html += `
+        <tr>
+          <td>${escapeHtml(p.phone)}</td>
+          <td>${escapeHtml(p.pin)}</td>
+          <td class="${statusClass}">${escapeHtml(p.status)}</td>
+          <td>${escapeHtml(p.reason || p.message || "-")}</td>
+          <td>
+            <button class="copy-btn" onclick="copy('${escapeHtml(p.phone)}')">📋</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    tableBody.innerHTML = html;
+    statusBar.textContent = "";
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    tableBody.innerHTML = "";
+    statusBar.className = "status-bar error";
+    statusBar.textContent = `Failed to load: ${error.message}. Tap Refresh to retry.`;
+  } finally {
+    loading = false;
+    updateControls();
+  }
+}
+
+function copy(text) {
   navigator.clipboard.writeText(text);
   alert("Copied: " + text);
 }
 
+prevBtn.addEventListener("click", () => {
+  if (page > 1) {
+    page -= 1;
+    loadData();
+  }
+});
+
+nextBtn.addEventListener("click", () => {
+  if (page < totalPages) {
+    page += 1;
+    loadData();
+  }
+});
+
+limitSelect.addEventListener("change", () => {
+  limit = Number(limitSelect.value) || 100;
+  page = 1;
+  loadData();
+});
+
+statusFilter.addEventListener("change", () => {
+  status = statusFilter.value;
+  page = 1;
+  loadData();
+});
+
+refreshBtn.addEventListener("click", () => loadData());
+
 loadData();
 
-// auto refresh every 5 sec
-setInterval(loadData, 5000);
-
+// Refresh current page only, and never overlap requests
+setInterval(() => {
+  if (!loading) loadData();
+}, 15000);
 </script>
 
 </body>

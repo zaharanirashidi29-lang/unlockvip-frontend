@@ -167,8 +167,43 @@ tr:hover{
 </table>
 
 <script>
-const API = "https://unlockvip-backend-1.onrender.com/admin/payments";
-const SYNC_API = "https://unlockvip-backend-1.onrender.com/admin/sync-payments";
+function apiBases() {
+  const bases = [];
+  if (location.protocol === "http:" || location.protocol === "https:") {
+    bases.push(location.origin);
+  }
+  bases.push("https://unlockvip-backend-1.onrender.com");
+  bases.push("https://unlockvip-backend.onrender.com");
+  return [...new Set(bases)];
+}
+
+function fetchWithTimeout(url, options = {}, ms = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
+async function fetchApi(path, options = {}, ms = 25000) {
+  let lastError = null;
+  for (const base of apiBases()) {
+    try {
+      const res = await fetchWithTimeout(
+        `${base}${path}`,
+        { cache: "no-store", ...options },
+        ms
+      );
+      const type = res.headers.get("content-type") || "";
+      if (res.status === 404 || res.status === 405) continue;
+      if (type.includes("text/html") && !type.includes("json")) continue;
+      return res;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("All API hosts failed");
+}
 
 let page = 1;
 let limit = 50;
@@ -214,14 +249,6 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-function fetchWithTimeout(url, options = {}, ms = 12000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => {
-    clearTimeout(timer);
-  });
-}
-
 async function loadData(attempt = 1) {
   if (loading && attempt === 1) return;
   const gen = attempt === 1 ? ++loadGen : loadGen;
@@ -244,11 +271,7 @@ async function loadData(attempt = 1) {
     if (phoneQuery) params.set("phone", phoneQuery);
 
     const timeoutMs = attempt === 1 ? 25000 : 55000;
-    const res = await fetchWithTimeout(
-      `${API}?${params}`,
-      { cache: "no-store" },
-      timeoutMs
-    );
+    const res = await fetchApi(`/admin/payments?${params}`, {}, timeoutMs);
     if (gen !== loadGen) return;
 
     if (res.status === 503 && attempt < 4) {
@@ -332,8 +355,8 @@ async function syncPayments() {
   statusBar.className = "status-bar";
   statusBar.textContent = "Syncing pending/timeout payments from providers...";
   try {
-    const res = await fetchWithTimeout(
-      SYNC_API,
+    const res = await fetchApi(
+      "/admin/sync-payments",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

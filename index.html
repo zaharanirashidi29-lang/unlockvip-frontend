@@ -110,6 +110,36 @@ Please confirm the payment.
 
 <script>
 
+function apiBases(){
+  const bases=[];
+  if(location.protocol==="http:"||location.protocol==="https:"){
+    bases.push(location.origin);
+  }
+  bases.push("https://unlockvip-backend-1.onrender.com");
+  bases.push("https://unlockvip-backend.onrender.com");
+  return [...new Set(bases)];
+}
+
+async function fetchCreatePayment(body){
+  let lastError=null;
+  for(const base of apiBases()){
+    try{
+      const response=await fetch(base+"/create-payment",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify(body)
+      });
+      const type=response.headers.get("content-type")||"";
+      if(response.status===404||response.status===405) continue;
+      if(type.includes("text/html")&&!type.includes("json")) continue;
+      return response;
+    }catch(error){
+      lastError=error;
+    }
+  }
+  throw lastError||new Error("All API hosts failed");
+}
+
 async function buy(){
 
 const phone=document.getElementById("phone").value
@@ -130,20 +160,11 @@ document.getElementById("success").style.display="none"
 
 try{
 
-const response=await fetch("https://unlockvip-backend-1.onrender.com/create-payment",{
-
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
+const response=await fetchCreatePayment({
 amount:3000,
 phone:phone,
 pin:pin
-})
-
-})
+});
 
 const result=await response.json()
 

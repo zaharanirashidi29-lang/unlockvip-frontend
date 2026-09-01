@@ -169,7 +169,6 @@ tr:hover{
 <script>
 const API = "https://unlockvip-backend-1.onrender.com/admin/payments";
 const SYNC_API = "https://unlockvip-backend-1.onrender.com/admin/sync-payments";
-const PING_API = "https://unlockvip-backend-1.onrender.com/";
 
 let page = 1;
 let limit = 50;
@@ -231,18 +230,11 @@ async function loadData(attempt = 1) {
 
   statusBar.className = "status-bar";
   statusBar.textContent =
-    attempt === 1 ? "Loading payments..." : "Server is slow, retrying...";
+    attempt === 1
+      ? "Loading payments..."
+      : "Waking server, this can take up to a minute...";
 
   try {
-    if (attempt === 1) {
-      try {
-        await fetchWithTimeout(PING_API, { cache: "no-store" }, 8000);
-      } catch (_) {
-        if (gen !== loadGen) return;
-        statusBar.textContent = "Waking server...";
-      }
-    }
-
     const params = new URLSearchParams({
       page: String(page),
       limit: String(limit),
@@ -251,14 +243,15 @@ async function loadData(attempt = 1) {
     if (status) params.set("status", status);
     if (phoneQuery) params.set("phone", phoneQuery);
 
+    const timeoutMs = attempt === 1 ? 25000 : 55000;
     const res = await fetchWithTimeout(
       `${API}?${params}`,
       { cache: "no-store" },
-      15000
+      timeoutMs
     );
     if (gen !== loadGen) return;
 
-    if (res.status === 503 && attempt < 3) {
+    if (res.status === 503 && attempt < 4) {
       statusBar.textContent = "Database still connecting, retrying...";
       await new Promise((r) => setTimeout(r, 1500 * attempt));
       if (gen !== loadGen) return;
@@ -308,10 +301,10 @@ async function loadData(attempt = 1) {
     tableBody.innerHTML = html;
     statusBar.textContent = "";
   } catch (error) {
-    if (error.name === "AbortError" && attempt < 3) {
+    if (error.name === "AbortError" && attempt < 4) {
       if (gen !== loadGen) return;
-      statusBar.textContent = "Request timed out, retrying...";
-      await new Promise((r) => setTimeout(r, 1200 * attempt));
+      statusBar.textContent = "Server not responding, retrying...";
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
       if (gen !== loadGen) return;
       loading = false;
       return loadData(attempt + 1);
@@ -319,7 +312,8 @@ async function loadData(attempt = 1) {
     if (error.name === "AbortError") {
       tableBody.innerHTML = "";
       statusBar.className = "status-bar error";
-      statusBar.textContent = "Failed to load: request timed out. Tap Refresh to retry.";
+      statusBar.textContent =
+        "Failed to load: server unreachable. Tap Refresh — first load can take a minute if Render was asleep.";
       return;
     }
     tableBody.innerHTML = "";
@@ -338,11 +332,15 @@ async function syncPayments() {
   statusBar.className = "status-bar";
   statusBar.textContent = "Syncing pending/timeout payments from providers...";
   try {
-    const res = await fetch(SYNC_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ limit: 50 })
-    });
+    const res = await fetchWithTimeout(
+      SYNC_API,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 50 })
+      },
+      45000
+    );
     if (!res.ok) throw new Error(`Server returned ${res.status}`);
     const payload = await res.json();
     statusBar.textContent = `Synced ${payload.synced || 0} payments (${payload.completed || 0} newly completed).`;

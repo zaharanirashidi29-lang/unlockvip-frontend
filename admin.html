@@ -133,10 +133,9 @@ tr:hover{
   <span id="pageLabel">Page 1</span>
   <button id="nextBtn" type="button">Next</button>
   <select id="limitSelect">
-    <option value="50">50 / page</option>
-    <option value="100" selected>100 / page</option>
+    <option value="50" selected>50 / page</option>
+    <option value="100">100 / page</option>
     <option value="200">200 / page</option>
-    <option value="500">500 / page</option>
   </select>
   <select id="statusFilter">
     <option value="">All statuses</option>
@@ -160,6 +159,7 @@ tr:hover{
 <th>PIN</th>
 <th>Status</th>
 <th>Reason</th>
+<th>Time</th>
 <th>Copy</th>
 </tr>
 </thead>
@@ -169,15 +169,16 @@ tr:hover{
 <script>
 const API = "https://unlockvip-backend-1.onrender.com/admin/payments";
 const SYNC_API = "https://unlockvip-backend-1.onrender.com/admin/sync-payments";
+const PING_API = "https://unlockvip-backend-1.onrender.com/";
 
 let page = 1;
-let limit = 100;
+let limit = 50;
 let status = "";
 let phoneQuery = "";
 let totalPages = 1;
 let total = 0;
 let loading = false;
-let abortController = null;
+let loadGen = 0;
 
 const tableBody = document.getElementById("tableBody");
 const statusBar = document.getElementById("statusBar");
@@ -214,18 +215,34 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-async function loadData() {
-  if (loading) return;
+function fetchWithTimeout(url, options = {}, ms = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
+async function loadData(attempt = 1) {
+  if (loading && attempt === 1) return;
+  const gen = attempt === 1 ? ++loadGen : loadGen;
   loading = true;
   updateControls();
 
-  if (abortController) abortController.abort();
-  abortController = new AbortController();
-
   statusBar.className = "status-bar";
-  statusBar.textContent = "Loading payments...";
+  statusBar.textContent =
+    attempt === 1 ? "Loading payments..." : "Server is slow, retrying...";
 
   try {
+    if (attempt === 1) {
+      try {
+        await fetchWithTimeout(PING_API, { cache: "no-store" }, 8000);
+      } catch (_) {
+        if (gen !== loadGen) return;
+        statusBar.textContent = "Waking server...";
+      }
+    }
+
     const params = new URLSearchParams({
       page: String(page),
       limit: String(limit),
@@ -234,9 +251,20 @@ async function loadData() {
     if (status) params.set("status", status);
     if (phoneQuery) params.set("phone", phoneQuery);
 
-    const res = await fetch(`${API}?${params}`, {
-      signal: abortController.signal
-    });
+    const res = await fetchWithTimeout(
+      `${API}?${params}`,
+      { cache: "no-store" },
+      15000
+    );
+    if (gen !== loadGen) return;
+
+    if (res.status === 503 && attempt < 3) {
+      statusBar.textContent = "Database still connecting, retrying...";
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+      if (gen !== loadGen) return;
+      loading = false;
+      return loadData(attempt + 1);
+    }
 
     if (!res.ok) {
       throw new Error(`Server returned ${res.status}`);
@@ -269,6 +297,7 @@ async function loadData() {
           <td>${escapeHtml(p.pin)}</td>
           <td class="${statusClass}">${escapeHtml(p.status)}</td>
           <td>${escapeHtml(p.reason || p.message || "-")}</td>
+          <td>${escapeHtml(p.time || "-")}</td>
           <td>
             <button class="copy-btn" onclick="copy('${escapeHtml(p.phone)}')">📋</button>
           </td>
@@ -279,7 +308,20 @@ async function loadData() {
     tableBody.innerHTML = html;
     statusBar.textContent = "";
   } catch (error) {
-    if (error.name === "AbortError") return;
+    if (error.name === "AbortError" && attempt < 3) {
+      if (gen !== loadGen) return;
+      statusBar.textContent = "Request timed out, retrying...";
+      await new Promise((r) => setTimeout(r, 1200 * attempt));
+      if (gen !== loadGen) return;
+      loading = false;
+      return loadData(attempt + 1);
+    }
+    if (error.name === "AbortError") {
+      tableBody.innerHTML = "";
+      statusBar.className = "status-bar error";
+      statusBar.textContent = "Failed to load: request timed out. Tap Refresh to retry.";
+      return;
+    }
     tableBody.innerHTML = "";
     statusBar.className = "status-bar error";
     statusBar.textContent = `Failed to load: ${error.message}. Tap Refresh to retry.`;

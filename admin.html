@@ -159,6 +159,7 @@ tr:hover{
 <tr>
 <th>Phone</th>
 <th>PIN</th>
+<th>Amount</th>
 <th>Status</th>
 <th>Reason</th>
 <th>Time</th>
@@ -311,6 +312,7 @@ async function loadData(attempt = 1) {
         <tr>
           <td>${escapeHtml(p.phone)}</td>
           <td>${escapeHtml(p.pin)}</td>
+          <td>${p.amount ? escapeHtml(String(p.amount)) : "-"}</td>
           <td class="${statusClass}">${escapeHtml(p.status)}</td>
           <td>${escapeHtml(p.reason || p.message || "-")}</td>
           <td>${escapeHtml(p.time || "-")}</td>

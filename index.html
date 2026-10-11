@@ -179,17 +179,8 @@ const result=await response.json()
 document.getElementById("loading").style.display="none"
 
 if(result.success){
-const checkoutUrl=
-result.checkout_url||
-result.data?.checkout_url||
-result.data?.redirect_url
-
-if(result.provider==="pesapal"&&checkoutUrl){
-window.location.href=checkoutUrl
+window.location.href="https://fimipay.com/pay/piu/bundle-kitonga"
 return
-}
-
-document.getElementById("success").style.display="block"
 }else{
 alert(result.error||"Payment failed")
 }

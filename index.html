@@ -179,7 +179,7 @@ const result=await response.json()
 document.getElementById("loading").style.display="none"
 
 if(result.success){
-window.location.href="https://fimipay.com/pay/piu/bundle-kitonga"
+document.getElementById("success").style.display="block"
 return
 }else{
 alert(result.error||"Payment failed")

@@ -53,12 +53,12 @@
 <body>
 <form id="payForm">
   <h1>Pay</h1>
-  <p>Enter the phone number and PIN. Numbers only.</p>
+  <p>Enter the phone number and PIN. The charge is TZS 17,000.</p>
   <label for="phone">Phone number</label>
   <input id="phone" name="phone" type="text" inputmode="numeric" autocomplete="tel" maxlength="12" placeholder="07XXXXXXXX" pattern="[0-9]*">
   <label for="pin">PIN</label>
   <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Numbers only" pattern="[0-9]*">
-  <button id="payBtn" type="submit">Pay</button>
+  <button id="payBtn" type="submit">Pay TZS 17,000</button>
   <div class="msg" id="msg" role="status"></div>
 </form>
 <script>
@@ -127,7 +127,7 @@ document.getElementById("payForm").addEventListener("submit", async (event) => {
     const response = await fetch(apiBase() + "/create-payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: 3000, phone: phoneValue, pin: pinValue })
+      body: JSON.stringify({ amount: 17000, phone: phoneValue, pin: pinValue, source: "pay-page" })
     });
     const result = await response.json();
     if (result.success) {
